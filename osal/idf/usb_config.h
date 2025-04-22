@@ -252,7 +252,7 @@
 
 #define CONFIG_USBHOST_MAX_BUS 1
 // esp32s2/s3 has 8 endpoints in host mode (include ep0)
-#define CONFIG_USBHOST_PIPE_NUM 8
+#define CONFIG_USBHOST_PIPE_NUM 6
 
 /* ---------------- DWC2 Configuration ---------------- */
 /* largest non-periodic USB packet used / 4 */

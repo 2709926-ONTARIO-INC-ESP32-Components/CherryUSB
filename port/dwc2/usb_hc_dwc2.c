@@ -348,6 +348,8 @@ static inline uint32_t dwc2_get_glb_intstatus(struct usbh_bus *bus)
 
     tmpreg = USB_OTG_GLB->GINTSTS;
     tmpreg &= USB_OTG_GLB->GINTMSK;
+    /* Clear any pending interrupts */
+    USB_OTG_GLB->GINTSTS = 0xFFFFFFFFU;
 
     return tmpreg;
 }
@@ -1135,6 +1137,15 @@ void USBH_IRQHandler(uint8_t busid)
         /* Avoid spurious interrupt */
         if (gint_status == 0) {
             return;
+        }
+
+        if (gint_status & USB_OTG_GINTSTS_RXFLVL) {
+            /* Ack the packet‐status word so the FIFO empties */
+            volatile uint32_t pkt = USB_OTG_GLB->GRXSTSP;
+            /* Clear the RXFLVL bit itself */
+            USB_OTG_GLB->GINTSTS = USB_OTG_GINTSTS_RXFLVL;
+            /* And remove it from our local mask so we don’t hit it again below */
+            gint_status &= ~USB_OTG_GINTSTS_RXFLVL;
         }
 
         if (gint_status & USB_OTG_GINTSTS_HPRTINT) {

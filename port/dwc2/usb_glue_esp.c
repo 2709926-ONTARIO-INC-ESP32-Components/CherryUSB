@@ -80,6 +80,8 @@ static void usb_hc_interrupt_cb(void *arg_pv)
 {
     extern void USBH_IRQHandler(uint8_t busid);
     USBH_IRQHandler(0);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void usb_hc_low_level_init(struct usbh_bus *bus)
