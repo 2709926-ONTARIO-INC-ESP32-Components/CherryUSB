@@ -40,6 +40,7 @@ static void usbh_ftdi_class_free(struct usbh_ftdi *ftdi_class)
     memset(ftdi_class, 0, sizeof(struct usbh_ftdi));
 }
 
+#if 0
 static void usbh_ftdi_caculate_baudrate(uint32_t *itdf_divisor, uint32_t actual_baudrate)
 {
 #define FTDI_USB_CLK 48000000
@@ -67,6 +68,36 @@ static void usbh_ftdi_caculate_baudrate(uint32_t *itdf_divisor, uint32_t actual_
         divisor &= 0x3FFF;
         *itdf_divisor = (divisor << 14) | (frac_bits << 8);
     }
+}
+#endif
+static void usbh_ftdi_caculate_baudrate(uint32_t *ftdi_divisor, uint32_t actual_baudrate)
+{
+    const uint32_t ref_clk = 3000000UL;   // 48 MHz ÷ 16 = 3 MHz UART clock :contentReference[oaicite:0]{index=0}
+    uint32_t divisor_fixed17;
+
+    // Special cases for the very highest rates
+    if (actual_baudrate == 3000000UL) {
+        divisor_fixed17 = 0;  // yields 3 Mbaud
+    } else if (actual_baudrate == 2000000UL) {
+        divisor_fixed17 = 1;  // yields 2 Mbaud
+    } else {
+        // Compute 8×(n + x) with rounding to nearest integer
+        // where Baud = ref_clk/(n + x), x in {0,1/8,…,7/8}
+        uint32_t div8 = (ref_clk * 8 + actual_baudrate/2) / actual_baudrate;
+        uint32_t frac_index = div8 & 0x7;        // sub-integer × 8 (0…7)
+        uint32_t n          = div8 >> 3;        // integer part (2…16 384)
+
+        // Build the 17-bit fixed-point divisor:
+        //   bits [16:14] = frac_index,
+        //   bits [13:0]  = n
+        divisor_fixed17 = (frac_index << 14)
+                        | (n & 0x3FFF);         // :contentReference[oaicite:1]{index=1}
+    }
+
+    // Pack into 32-bit word: lower 16 bits → wValue, bit 16 → bit 0 of wIndex
+    uint16_t wValue = divisor_fixed17 & 0xFFFF;
+    uint16_t wIndex = (divisor_fixed17 >> 16) & 0x1;
+    *ftdi_divisor  = ((uint32_t)wIndex << 16) | wValue;
 }
 
 int usbh_ftdi_reset(struct usbh_ftdi *ftdi_class)
