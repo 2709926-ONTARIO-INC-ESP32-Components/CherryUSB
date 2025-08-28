@@ -10,7 +10,7 @@
 
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t g_ftdi_buf[USB_ALIGN_UP(64, CONFIG_USB_ALIGN_SIZE)];
 
-#define CONFIG_USBHOST_MAX_FTDI_CLASS 10U
+#define CONFIG_USBHOST_MAX_FTDI_CLASS 6U
 
 static struct usbh_ftdi g_ftdi_class[CONFIG_USBHOST_MAX_FTDI_CLASS];
 static uint32_t g_devinuse = 0;
